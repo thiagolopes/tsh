@@ -90,18 +90,18 @@ int tsh_execute(char **args) {
   if (pid == 0) {
     // child
     if (execvp(args[0], args) == -1) {
-      perror("tsh execvp");
+      perror("tsh: ");
     }
     exit(EXIT_FAILURE);
   } else if (pid < 0) {
     // fork error
-    perror("tsh fork");
+    perror("tsh: ");
   } else {
     // parent
     do {
       wpid = waitpid(pid, &status, WUNTRACED);
       if (wpid == -1) {
-        perror("tsh waitpid");
+        perror("tsh: ");
         exit(EXIT_FAILURE);
       }
     } while (!WIFEXITED(status) && !WIFSIGNALED(status));
