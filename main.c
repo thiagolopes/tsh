@@ -71,6 +71,8 @@ char *tsh_raw_line() {
     /* read char input */
     c = getchar();
 
+    /* TODO check if is keybind <control> */
+
     /* EOF finish the input loop */
     if (c == EOF) {
       buffer[pos] = '\0';
@@ -120,7 +122,7 @@ char **tsh_parse_line(char *raw_line) {
         fprintf(stderr, "tsh parser memory allocation error\n");
         exit(EXIT_FAILURE);
       }
-   }
+    }
 
     token = strtok(NULL, TSH_TOKENS_PARSER);
   }
