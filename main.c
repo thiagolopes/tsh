@@ -9,6 +9,39 @@
 #define TSH_PS_BUFSIZE 32
 #define TSH_TOKENS_PARSER " \n\t\r\a\\"
 
+/* TODO implement clear command-l */
+/* TODO implement up arrow navegate to a memory history */
+
+int tsh_builtin_exit(char **args);
+int tsh_builtin_cd(char **args);
+int tsh_builtin_help(char **args);
+
+char *BUILTIN_TOKENS[] = {"exit", "cd", "help"};
+int (*builtin_functions[])(char **) = {
+    &tsh_builtin_exit,
+    &tsh_builtin_cd,
+    &tsh_builtin_help,
+};
+int BUILTIN_TOKENS_LEN = sizeof(BUILTIN_TOKENS) / sizeof(char *);
+
+int tsh_builtin_exit(char **args) { exit(EXIT_SUCCESS); }
+
+int tsh_builtin_cd(char **args) {
+  if (args[1] == NULL) {
+    fprintf(stderr, "tsh: cd expect one argument\n");
+  }
+
+  if (chdir(args[1]) != 0) {
+    perror("tsh: ");
+  }
+  return 1;
+}
+
+int tsh_builtin_help(char **args) {
+  /* TODO generate a help here */
+  return 1;
+}
+
 char *tsh_raw_line() {
   int tsh_rl_bufsize = TSH_RL_BUFSIZE;
   int pos = 0;
@@ -29,6 +62,7 @@ char *tsh_raw_line() {
       buffer[pos] = '\0';
       return buffer;
     }
+    /* unless is not a break line, \n finish the input loop  */
     if (c == '\n' && (!(pos > 0 && buffer[pos - 1] == '\\'))) {
       buffer[pos] = '\0';
       return buffer;
@@ -72,7 +106,7 @@ char **tsh_parse_line(char *raw_line) {
         fprintf(stderr, "tsh parser memory allocation error\n");
         exit(EXIT_FAILURE);
       }
-    }
+   }
 
     token = strtok(NULL, TSH_TOKENS_PARSER);
   }
@@ -82,6 +116,14 @@ char **tsh_parse_line(char *raw_line) {
 }
 
 int tsh_execute(char **args) {
+  /* builtin command */
+  for (int i = 0; i < BUILTIN_TOKENS_LEN; i++) {
+    if (strcmp(BUILTIN_TOKENS[i], args[0]) == 0) {
+      return (*builtin_functions[i])(args);
+    }
+  }
+
+  /* normal command */
   pid_t pid, wpid;
   int status;
 
@@ -131,7 +173,7 @@ void tsh_loop(void) {
   } while (status);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
   tsh_loop();
   return EXIT_SUCCESS;
 }
