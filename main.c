@@ -38,7 +38,16 @@ int tsh_builtin_cd(char **args) {
 }
 
 int tsh_builtin_help(char **args) {
-  /* TODO generate a help here */
+  printf("Thiago's shell, TSH\n\n");
+  printf("Type arguments and hit enter.\n");
+  printf("Use \\ to break line.\n\n");
+  printf("Commands builtins:\n");
+
+  for (int i = 0; i < BUILTIN_LEN; i++) {
+    printf("\t %s\n", BUILTINS[i].builtin_name);
+  }
+
+  printf("\nUse man to more information\n\n");
   return 1;
 }
 
