@@ -16,13 +16,18 @@ int tsh_builtin_exit(char **args);
 int tsh_builtin_cd(char **args);
 int tsh_builtin_help(char **args);
 
-char *BUILTIN_TOKENS[] = {"exit", "cd", "help"};
-int (*builtin_functions[])(char **) = {
-    &tsh_builtin_exit,
-    &tsh_builtin_cd,
-    &tsh_builtin_help,
+typedef struct {
+  char *builtin_name;
+  int (*builtin_functions)(char **);
+} builtin;
+
+builtin BUILTINS[] = {
+    {"exit", &tsh_builtin_exit},
+    {"cd", &tsh_builtin_cd},
+    {"help", &tsh_builtin_help},
 };
-int BUILTIN_TOKENS_LEN = sizeof(BUILTIN_TOKENS) / sizeof(char *);
+
+int BUILTIN_LEN = sizeof(BUILTINS) / sizeof(builtin);
 
 int tsh_builtin_exit(char **args) { exit(EXIT_SUCCESS); }
 
@@ -126,9 +131,9 @@ char **tsh_parse_line(char *raw_line) {
 
 int tsh_execute(char **args) {
   /* builtin command */
-  for (int i = 0; i < BUILTIN_TOKENS_LEN; i++) {
-    if (strcmp(BUILTIN_TOKENS[i], args[0]) == 0) {
-      return (*builtin_functions[i])(args);
+  for (int i = 0; i < BUILTIN_LEN; i++) {
+    if (strcmp(BUILTINS[i].builtin_name, args[0]) == 0) {
+      return (*BUILTINS[i].builtin_functions)(args);
     }
   }
 
