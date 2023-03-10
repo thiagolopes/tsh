@@ -7,8 +7,11 @@
 
 #define TSH_RL_BUFSIZE 1024
 #define TSH_PS_BUFSIZE 32
+#define TSH_PIPE_BUFSIZE 5
 #define TSH_TOKENS_PARSER " \n\t\r\a\\"
+#define TSH_TOKENS "|"
 
+/* TODO add free s */
 /* TODO implement clear command-l */
 /* TODO implement up arrow navegate to a memory history */
 
@@ -29,7 +32,9 @@ builtin BUILTINS[] = {
 
 int BUILTIN_LEN = sizeof(BUILTINS) / sizeof(builtin);
 
-int tsh_builtin_exit(char **args) { exit(EXIT_SUCCESS); }
+int tsh_builtin_exit(char **args) {
+  return 0;
+}
 
 int tsh_builtin_cd(char **args) {
   if (args[1] == NULL) {
@@ -39,6 +44,7 @@ int tsh_builtin_cd(char **args) {
   if (chdir(args[1]) != 0) {
     perror("tsh: ");
   }
+
   return 1;
 }
 
@@ -63,7 +69,7 @@ char *tsh_raw_line() {
   int c;
 
   if (!buffer) {
-    fprintf(stderr, "tsh memory allocation error\n");
+    fprintf(stderr, "tsh: memory allocation error\n");
     exit(EXIT_FAILURE);
   }
 
@@ -91,47 +97,81 @@ char *tsh_raw_line() {
       tsh_rl_bufsize *= 2;
       buffer = realloc(buffer, tsh_rl_bufsize);
       if (!buffer) {
-        fprintf(stderr, "tsh memory allocation error\n");
+        fprintf(stderr, "tsh: memory allocation error\n");
         exit(EXIT_FAILURE);
       }
     }
   }
 }
 
-char **tsh_parse_line(char *raw_line) {
-  int tsh_parse_bufsize = TSH_PS_BUFSIZE;
-  int pos = 0;
-  char *token;
-  char **tokens = malloc(sizeof(char *) * tsh_parse_bufsize);
+char ***tsh_parse_line(char **raw_lines, int lines_len) {
+  char ***args = malloc(lines_len);
 
-  if (!tokens) {
-    fprintf(stderr, "tsh parser memory allocation error\n");
+  if (!args) {
+      fprintf(stderr, "tsh: memory allocation error\n");
+      exit(EXIT_FAILURE);
+  }
+
+  for (int i=0; i < lines_len; i++) {
+      int pos = 0;
+      int tsh_rl_bufsize = TSH_PS_BUFSIZE;
+      char *token;
+
+      args[i] = malloc(tsh_rl_bufsize);
+      token = strtok(raw_lines[i], TSH_TOKENS_PARSER);
+
+      while(token != NULL) {
+          args[i][pos] = token;
+          pos ++;
+
+          if (pos == tsh_rl_bufsize) {
+              tsh_rl_bufsize *= 2;
+              args[i] = realloc(args[i], tsh_rl_bufsize);
+              if (!args[i]) {
+                  fprintf(stderr, "tsh: memory allocation error\n");
+                  exit(EXIT_FAILURE);
+              }
+          }
+
+          token = strtok(NULL, TSH_TOKENS_PARSER);
+      }
+  }
+  return args;
+}
+
+
+char **tsh_parse_tokens(char *raw_line, int *lines_len) {
+  int tsh_parse_bufsize = TSH_PIPE_BUFSIZE;
+  int pos = 0;
+  char *line;
+  char **pipes = malloc(tsh_parse_bufsize * sizeof(char *));
+
+  if (!pipes) {
+    fprintf(stderr, "tsh: parser memory allocation error\n");
     exit(EXIT_FAILURE);
   }
 
-  token = strtok(raw_line, TSH_TOKENS_PARSER);
-  while (token != NULL) {
-    tokens[pos] = token;
+  line = strtok(raw_line, "|");
+
+  while(line) {
+    pipes[pos] = line;
     pos++;
 
-    if (pos == tsh_parse_bufsize) {
+    if (pos == tsh_parse_bufsize){
       tsh_parse_bufsize += TSH_PS_BUFSIZE;
-      tokens = realloc(tokens, tsh_parse_bufsize);
-
-      if (!tokens) {
-        fprintf(stderr, "tsh parser memory allocation error\n");
+      pipes = realloc(pipes, tsh_parse_bufsize);
+      if (!pipes) {
         exit(EXIT_FAILURE);
       }
     }
-
-    token = strtok(NULL, TSH_TOKENS_PARSER);
+    line = strtok(NULL, "|");
   }
-
-  tokens[pos] = NULL;
-  return tokens;
+  *lines_len = pos;
+  return pipes;
 }
 
-int tsh_execute(char **args) {
+
+int tsh_spaw(char **args) {
   /* builtin command */
   for (int i = 0; i < BUILTIN_LEN; i++) {
     if (strcmp(BUILTINS[i].builtin_name, args[0]) == 0) {
@@ -168,24 +208,38 @@ int tsh_execute(char **args) {
   return 1;
 }
 
+
+int tsh_execute(char ***args, int lines_len) {
+  int status;
+  for (int i=0; i < lines_len; i++) {
+        status = tsh_spaw(args[i]);
+        if (!status) {
+            perror("tsh: ");
+            exit(EXIT_FAILURE);
+        }
+    }
+    return status;
+}
+
 void tsh_ps1(void) { printf("> "); }
 
 void tsh_loop(void) {
-  char *raw_line;
-  char **args;
-  int status;
+  char *raw_line, **raw_lines, ***args;
+  int lines_len = 0, status;
 
   system("clear");
 
   do {
     tsh_ps1();
 
-    raw_line = tsh_raw_line();
-    args = tsh_parse_line(raw_line);
-    status = tsh_execute(args);
+    raw_line = tsh_raw_line(); // stringzona
+    raw_lines = tsh_parse_tokens(raw_line, &lines_len); // lista de cmds divididos por |
+    args = tsh_parse_line(raw_lines, lines_len); // lista de uma lista dividia por tokens
+    status = tsh_execute(args, lines_len); // executa todas as linhas de cmds
 
     free(raw_line);
     free(args);
+    free(raw_lines);
   } while (status);
 }
 
