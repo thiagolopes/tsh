@@ -208,7 +208,6 @@ int tsh_spaw(char **args) {
   return 1;
 }
 
-
 int tsh_execute(char ***args, int lines_len) {
   int status;
   for (int i=0; i < lines_len; i++) {
@@ -232,10 +231,10 @@ void tsh_loop(void) {
   do {
     tsh_ps1();
 
-    raw_line = tsh_raw_line(); // stringzona
-    raw_lines = tsh_parse_tokens(raw_line, &lines_len); // lista de cmds divididos por |
-    args = tsh_parse_line(raw_lines, lines_len); // lista de uma lista dividia por tokens
-    status = tsh_execute(args, lines_len); // executa todas as linhas de cmds
+    raw_line = tsh_raw_line();
+    raw_lines = tsh_parse_tokens(raw_line, &lines_len);
+    args = tsh_parse_line(raw_lines, lines_len);
+    status = tsh_execute(args, lines_len);
 
     free(raw_line);
     free(args);
