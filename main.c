@@ -6,12 +6,11 @@
 #include <unistd.h>
 
 #define TSH_RL_BUFSIZE 1024
-#define TSH_PS_BUFSIZE 32
+#define TSH_PS_BUFSIZE 8
 #define TSH_PIPE_BUFSIZE 5
 #define TSH_TOKENS_PARSER " \n\t\r\a\\"
 #define TSH_TOKENS "|"
 
-/* TODO add free s */
 /* TODO implement clear command-l */
 /* TODO implement up arrow navegate to a memory history */
 
@@ -105,7 +104,7 @@ char *tsh_raw_line() {
 }
 
 char ***tsh_parse_line(char **raw_lines, int lines_len) {
-  char ***args = malloc(lines_len);
+  char ***args = malloc(lines_len * sizeof(char**));
 
   if (!args) {
       fprintf(stderr, "tsh: memory allocation error\n");
@@ -117,7 +116,7 @@ char ***tsh_parse_line(char **raw_lines, int lines_len) {
       int tsh_rl_bufsize = TSH_PS_BUFSIZE;
       char *token;
 
-      args[i] = malloc(tsh_rl_bufsize);
+      args[i] = malloc(tsh_rl_bufsize * sizeof(int));
       token = strtok(raw_lines[i], TSH_TOKENS_PARSER);
 
       while(token != NULL) {
@@ -224,21 +223,26 @@ void tsh_ps1(void) { printf("> "); }
 
 void tsh_loop(void) {
   char *raw_line, **raw_lines, ***args;
-  int lines_len = 0, status;
+  int status;
 
   system("clear");
 
   do {
-    tsh_ps1();
+    int lines_len = 0;
 
+    tsh_ps1();
     raw_line = tsh_raw_line();
     raw_lines = tsh_parse_tokens(raw_line, &lines_len);
     args = tsh_parse_line(raw_lines, lines_len);
     status = tsh_execute(args, lines_len);
 
+    for (int i=0; i < lines_len; i++) {
+      free(args[i]);
+    }
     free(raw_line);
-    free(args);
     free(raw_lines);
+    free(args);
+
   } while (status);
 }
 
