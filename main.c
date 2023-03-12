@@ -32,7 +32,7 @@ builtin BUILTINS[] = {
 int BUILTIN_LEN = sizeof(BUILTINS) / sizeof(builtin);
 
 int tsh_builtin_exit(char **args) {
-  return 0;
+  exit(EXIT_SUCCESS);
 }
 
 int tsh_builtin_cd(char **args) {
@@ -170,7 +170,7 @@ char **tsh_parse_tokens(char *raw_line, int *lines_len) {
 }
 
 
-int tsh_spaw(char **args) {
+int tsh_spawn(char **args, int std_in, int std_out) {
   /* builtin command */
   for (int i = 0; i < BUILTIN_LEN; i++) {
     if (strcmp(BUILTINS[i].builtin_name, args[0]) == 0) {
@@ -208,15 +208,19 @@ int tsh_spaw(char **args) {
 }
 
 int tsh_execute(char ***args, int lines_len) {
-  int status;
+  int status = 1, fd[2], std_in = 0, std_out = 1;
+  pipe(fd);
+
   for (int i=0; i < lines_len; i++) {
-        status = tsh_spaw(args[i]);
-        if (!status) {
-            perror("tsh: ");
-            exit(EXIT_FAILURE);
-        }
+    status = tsh_spawn(args[i], std_in, std_out);
+    if (!status) {
+      perror("tsh: ");
+      exit(EXIT_FAILURE);
     }
-    return status;
+  }
+  close(fd[0]);
+  close(fd[1]);
+  return status;
 }
 
 void tsh_ps1(void) { printf("> "); }
