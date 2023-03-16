@@ -1,3 +1,4 @@
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,9 @@
 #define TSH_PIPE_BUFSIZE 5
 #define TSH_TOKENS_PARSER " \n\t\r\a\\"
 #define TSH_TOKENS "|"
+
+#define RESET "\x1B[0m"
+#define BOLD "\x1B[1m"
 
 /* TODO implement clear command-l */
 /* TODO implement up arrow navegate to a memory history */
@@ -224,7 +228,9 @@ int tsh_execute(char ***args, int lines_len) {
 }
 
 void tsh_ps1(void) {
-    printf("> ");
+    char *pwd;
+    pwd = getcwd(pwd, PATH_MAX);
+    printf("%s%s%s> ", BOLD, pwd, RESET=);
 }
 
 void tsh_loop(void) {
