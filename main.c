@@ -230,7 +230,7 @@ int tsh_execute(char ***args, int lines_len) {
 void tsh_ps1(void) {
     char *pwd;
     pwd = getcwd(pwd, PATH_MAX);
-    printf("%s%s%s> ", BOLD, pwd, RESET=);
+    printf("%s%s%s> ", BOLD, pwd, RESET);
 }
 
 void tsh_loop(void) {
